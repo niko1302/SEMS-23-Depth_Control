@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+    pressure_atmospheric: 101325.0
+    pressure_offset: 0.0
+    depth_offset: 0.0
+    rho_water: 998.2

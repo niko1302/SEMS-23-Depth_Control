@@ -1,0 +1,6 @@
+/**:
+  ros__parameters:
+    setpoint_function: 'rectangle' # Options: 'rectangle' 'triangle' 'sin' 'const'
+    func_period_duration: 20.0
+    func_max_value: -0.4
+    func_min_value: -0.6
