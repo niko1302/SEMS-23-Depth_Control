@@ -168,11 +168,6 @@ class DepthControlNode(Node):
         # last_depth = self.last_depth_msg.depth
         last_time = self.last_depth_msg.header.stamp.sec + (self.last_depth_msg.header.stamp.nanosec * 1e-9)
 
-        # -- Set control System Variables --
-        Kp = 5.0
-        Kd = 4.0
-        Ki = 0.0
-
         # -- Calculate derivative of error --
         d_error = (error - self.last_error) / (now - last_time)
 
@@ -181,9 +176,9 @@ class DepthControlNode(Node):
         self.i_error += average_error * (now - last_time)
 
         # -- Calculate thrust --
-        p_control = Kp * error
-        d_control = Kd * d_error
-        i_control = Ki * self.i_error
+        p_control = self.p_gain * error
+        d_control = self.d_gain * d_error
+        i_control = self.i_gain * self.i_error
         thrust_z = p_control + d_control + i_control
 
         # -- thrust_z must be a value betweed -1 and +1 --
