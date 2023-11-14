@@ -1,6 +1,10 @@
 /**:
   ros__parameters:
+    # -- Type of setpoint function --
     setpoint_function: 'rectangle' # Options: 'rectangle' 'triangle' 'sin' 'const'
+    # -- Duration of one period of setpoint function --
     func_period_duration: 20.0
+    # -- Max value of setpoint function --
     func_max_value: -0.4
+    # -- Min value of setpoint function --
     func_min_value: -0.6

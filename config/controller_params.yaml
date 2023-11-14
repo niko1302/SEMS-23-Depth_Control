@@ -1,6 +1,8 @@
 /**:
   ros__parameters:
     gains:
-      p: 5.0
-      i: 0.0
-      d: 4.0
+      p: 5.0  # P Controller Gain
+      i: 0.0  # I Controller Gain
+      d: 4.0  # D Controller Gain
+    # -- Log thrust outputs or not --
+    log_outputs: False

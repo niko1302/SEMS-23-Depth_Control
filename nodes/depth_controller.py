@@ -26,6 +26,7 @@ class DepthControlNode(Node):
                 ('gains.p', rclpy.Parameter.Type.DOUBLE),
                 ('gains.d', rclpy.Parameter.Type.DOUBLE),
                 ('gains.i', rclpy.Parameter.Type.DOUBLE),
+                ('log_outputs', rclpy.Parameter.Type.BOOL)
             ]
         )
 
@@ -41,6 +42,10 @@ class DepthControlNode(Node):
         self.get_logger().info(f'{param.name} = {param.value}')
         self.d_gain = param.value
 
+        param = self.get_parameter('log_outputs')
+        self.get_logger().info(f'{param.name} = {param.value}')
+        self.log_outputs = param.value
+
         self.add_on_set_parameters_callback(self.on_params_changed)
 
         # -----------------------------
@@ -54,7 +59,6 @@ class DepthControlNode(Node):
         self.log = False
         self.log_thrust_min_max = False
         self.log_controllers = False
-        self.log_outputs = False
         self.max_thrust = 0.0
         self.min_thrust = 0.0
 
@@ -99,6 +103,8 @@ class DepthControlNode(Node):
                 self.i_gain = param.value
             elif param.name == 'gains.d':
                 self.d_gain = param.value
+            elif param.name == 'log_outputs':
+                self.log_outputs = param.value
             else:
                 continue
         return SetParametersResult(succesful=True, reason='Parameter set')

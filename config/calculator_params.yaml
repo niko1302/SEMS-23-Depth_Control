@@ -1,6 +1,10 @@
 /**:
   ros__parameters:
+    # -- Atmospheric pressure at 20°C --
     pressure_atmospheric: 101325.0
+    # -- Sensor pressure offset --
     pressure_offset: 0.0
+    # -- Depth offset (if sensor position is not origin of robot) --
     depth_offset: 0.0
+    # -- Density of water at 20°C and atmospheric pressure --
     rho_water: 998.2
