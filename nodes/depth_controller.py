@@ -26,7 +26,8 @@ class DepthControlNode(Node):
                 ('gains.p', rclpy.Parameter.Type.DOUBLE),
                 ('gains.d', rclpy.Parameter.Type.DOUBLE),
                 ('gains.i', rclpy.Parameter.Type.DOUBLE),
-                ('log_outputs', rclpy.Parameter.Type.BOOL)
+                ('toggle_i_controller', rclpy.Parameter.Type.BOOL),
+                ('near_setpoint_value', rclpy.Parameter.Type.DOUBLE),
             ]
         )
 
@@ -42,9 +43,13 @@ class DepthControlNode(Node):
         self.get_logger().info(f'{param.name} = {param.value}')
         self.d_gain = param.value
 
-        param = self.get_parameter('log_outputs')
+        param = self.get_parameter('toggle_i_controller')
         self.get_logger().info(f'{param.name} = {param.value}')
-        self.log_outputs = param.value
+        self.toggle_i_controller = param.value
+
+        param = self.get_parameter('near_setpoint_value')
+        self.get_logger().info(f'{param.name} = {param.value}')
+        self.near_setpoint_value = param.value
 
         self.add_on_set_parameters_callback(self.on_params_changed)
 
@@ -54,6 +59,7 @@ class DepthControlNode(Node):
         
         # -- Creates a publisher for the depth error --
         self.publish_depth_error = True
+        self.publish_thrust = True
 
         # -- Toggle logger informations --
         self.log = False
@@ -85,6 +91,26 @@ class DepthControlNode(Node):
                                                   callback=self.on_depth,
                                                   qos_profile=1)
         
+        # -- publishers for the thrust and the individual P I & D parts --
+        if self.publish_thrust:
+            self.thrust_log_z = self.create_publisher(
+                msg_type=Float64Stamped,
+                topic='thrust_log_z',
+                qos_profile=1)
+            self.thrust_log_z_p = self.create_publisher(
+                msg_type=Float64Stamped,
+                topic='thrust_log_z_p',
+                qos_profile=1)
+            self.thrust_log_z_i = self.create_publisher(
+                msg_type=Float64Stamped,
+                topic='thrust_log_z_i',
+                qos_profile=1)
+            self.thrust_log_z_d = self.create_publisher(
+                msg_type=Float64Stamped,
+                topic='thrust_log_z_d',
+                qos_profile=1)
+
+        # -- Publisher for the depth error --
         if self.publish_depth_error:
             self.depth_error_pub = self.create_publisher(
                 msg_type=Float64Stamped,
@@ -103,8 +129,10 @@ class DepthControlNode(Node):
                 self.i_gain = param.value
             elif param.name == 'gains.d':
                 self.d_gain = param.value
-            elif param.name == 'log_outputs':
-                self.log_outputs = param.value
+            elif param.name == 'toggle_i_controller':
+                self.toggle_i_controller = param.value
+            elif param.name == 'near_setpoint_value':
+                self.near_setpoint_value = param.value
             else:
                 continue
         return SetParametersResult(succesful=True, reason='Parameter set')
@@ -122,14 +150,10 @@ class DepthControlNode(Node):
         # -- null commands if not -0.8 < depth < -0.1 --
         if depth_msg.depth > -0.1 or depth_msg.depth < -0.8:
             thrust = 0.0
+            self.i_error = 0.0
         else:
             thrust = self.compute_control_output(depth_msg)
-        # either set the timestamp to the current time or set it to the
-        # stamp of `depth_msg` because the control output corresponds to this
-        # point in time. Both choices are meaningful.
-        # option 1:
-        # now = self.get_clock().now()
-        # option 2:
+        
         timestamp = rclpy.time.Time.from_msg(depth_msg.header.stamp)
         self.publish_vertical_thrust(thrust=thrust, timestamp=timestamp)
 
@@ -173,13 +197,18 @@ class DepthControlNode(Node):
         # -- Get last depth and time --
         # last_depth = self.last_depth_msg.depth
         last_time = self.last_depth_msg.header.stamp.sec + (self.last_depth_msg.header.stamp.nanosec * 1e-9)
+        d_time = now - last_time
 
         # -- Calculate derivative of error --
-        d_error = (error - self.last_error) / (now - last_time)
+        d_error = (error - self.last_error) / d_time
 
         # -- Calculate the integral of error --
-        average_error = (self.last_error + error) / 2
-        self.i_error += average_error * (now - last_time)
+        # i_error = 0 wenn lange kein Signal (normal 50Hz)
+        if (self.toggle_i_controller and error > self.near_setpoint_value) or d_time > 1.0:
+            self.i_error = 0.0
+        else:
+            average_error = (self.last_error + error) / 2
+            self.i_error += average_error * d_time
 
         # -- Calculate thrust --
         p_control = self.p_gain * error
@@ -207,9 +236,17 @@ class DepthControlNode(Node):
         if self.log_controllers:
             self.get_logger().info(
                 f'error = {error:.5f}; Derivation = {d_error:.5f}; Integral = {i_control:.5f}')
-        if self.log_outputs:
-            self.get_logger().info(
-                f'Thrust = {thrust_z:.5f}: P = {p_control:.5f} | D = {d_control:.5f} | I = {i_control:.5f}',)
+        if self.publish_thrust:
+            thrust_log = Float64Stamped()
+            thrust_log.header.stamp = self.get_clock().now().to_msg()
+            thrust_log.data = thrust_z
+            self.thrust_log_z.publish(thrust_log)
+            thrust_log.data = p_control
+            self.thrust_log_z_p.publish(thrust_log)
+            thrust_log.data = i_control
+            self.thrust_log_z_i.publish(thrust_log)
+            thrust_log.data = d_control
+            self.thrust_log_z_d.publish(thrust_log)
 
         # -- update saved Variables --
         self.last_error = error

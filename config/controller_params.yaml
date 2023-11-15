@@ -4,5 +4,6 @@
       p: 5.0  # P Controller Gain
       i: 0.0  # I Controller Gain
       d: 4.0  # D Controller Gain
-    # -- Log thrust outputs or not --
-    log_outputs: False
+    # -- Only enable the I controller when near setpoint --
+    toggle_i_controller: True
+    near_setpoint_value: 0.3
