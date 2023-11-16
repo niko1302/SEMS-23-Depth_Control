@@ -2,8 +2,8 @@
   ros__parameters:
     gains:
       p: 5.0  # P Controller Gain
-      i: 0.0  # I Controller Gain
+      i: 2.0  # I Controller Gain
       d: 4.0  # D Controller Gain
     # -- Only enable the I controller when near setpoint --
     toggle_i_controller: True
-    near_setpoint_value: 0.3
+    near_setpoint_value: 0.03

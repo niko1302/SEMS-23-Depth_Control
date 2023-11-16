@@ -204,7 +204,7 @@ class DepthControlNode(Node):
 
         # -- Calculate the integral of error --
         # i_error = 0 wenn lange kein Signal (normal 50Hz)
-        if (self.toggle_i_controller and error > self.near_setpoint_value) or d_time > 1.0:
+        if (self.toggle_i_controller and abs(error) > self.near_setpoint_value) or d_time > 1.0:
             self.i_error = 0.0
         else:
             average_error = (self.last_error + error) / 2
