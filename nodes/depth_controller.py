@@ -127,6 +127,7 @@ class DepthControlNode(Node):
                 self.p_gain = param.value
             elif param.name == 'gains.i':
                 self.i_gain = param.value
+                self.i_error = 0.0      # Reset whenever I gain is changed
             elif param.name == 'gains.d':
                 self.d_gain = param.value
             elif param.name == 'toggle_i_controller':
@@ -148,7 +149,7 @@ class DepthControlNode(Node):
         # We received a new depth message! Now we can get to action!
 
         # -- null commands if not -0.8 < depth < -0.1 --
-        if depth_msg.depth > -0.1 or depth_msg.depth < -0.8:
+        if depth_msg.depth > -0.1 or depth_msg.depth < -1.1:
             thrust = 0.0
             self.i_error = 0.0
         else:

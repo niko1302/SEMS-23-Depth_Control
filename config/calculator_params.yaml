@@ -8,3 +8,6 @@
     depth_offset: 0.0
     # -- Density of water at 20°C and atmospheric pressure --
     rho_water: 998.2
+    # -- Smooth signal --
+    signal_smoothing: True
+    moving_average_value: 0.3
