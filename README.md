@@ -1,5 +1,12 @@
 # SEMS-23-Depth_Control
 
+## Requirenemnts
+
+The Custom Messages Package is required:
+```
+https://github.com/niko1302/SEMS-23-Custom_Messages.git
+```
+
 ## Launch the Node
 
 To Start the Node Type:
