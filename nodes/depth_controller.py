@@ -9,6 +9,8 @@ from hippo_msgs.msg import ActuatorSetpoint, DepthStamped, Float64Stamped
 from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
 
+from custom_msgs.msg import ThrustVertical
+
 import time
 
 
@@ -58,8 +60,8 @@ class DepthControlNode(Node):
         # -----------------------------
         
         # -- Creates a publisher for the depth error --
-        self.publish_depth_error = True
-        self.publish_thrust = True
+        self.publish_depth_error = True     # <--- Hardcoded switch
+        self.publish_thrust = True          # <--- Hardcoded switch
 
         # -- Toggle logger informations --
         self.log = False
@@ -93,21 +95,9 @@ class DepthControlNode(Node):
         
         # -- publishers for the thrust and the individual P I & D parts --
         if self.publish_thrust:
-            self.thrust_log_z = self.create_publisher(
-                msg_type=Float64Stamped,
-                topic='thrust_log_z',
-                qos_profile=1)
-            self.thrust_log_z_p = self.create_publisher(
-                msg_type=Float64Stamped,
-                topic='thrust_log_z_p',
-                qos_profile=1)
-            self.thrust_log_z_i = self.create_publisher(
-                msg_type=Float64Stamped,
-                topic='thrust_log_z_i',
-                qos_profile=1)
-            self.thrust_log_z_d = self.create_publisher(
-                msg_type=Float64Stamped,
-                topic='thrust_log_z_d',
+            self.thrust_logger = self.create_publisher(
+                msg_type=ThrustVertical,
+                topic='thrust_logger',
                 qos_profile=1)
 
         # -- Publisher for the depth error --
@@ -238,16 +228,18 @@ class DepthControlNode(Node):
             self.get_logger().info(
                 f'error = {error:.5f}; Derivation = {d_error:.5f}; Integral = {i_control:.5f}')
         if self.publish_thrust:
-            thrust_log = Float64Stamped()
+            thrust_log = ThrustVertical()
             thrust_log.header.stamp = self.get_clock().now().to_msg()
-            thrust_log.data = thrust_z
-            self.thrust_log_z.publish(thrust_log)
-            thrust_log.data = p_control
-            self.thrust_log_z_p.publish(thrust_log)
-            thrust_log.data = i_control
-            self.thrust_log_z_i.publish(thrust_log)
-            thrust_log.data = d_control
-            self.thrust_log_z_d.publish(thrust_log)
+            thrust_log.thrust_z = thrust_z
+            thrust_log.thrust_z_p = p_control
+            thrust_log.thrust_z_i = i_control
+            thrust_log.thrust_z_d = d_control
+            thrust_log.p_gain = self.p_gain
+            thrust_log.i_gain = self.i_gain
+            thrust_log.i_shutoff_value = self.near_setpoint_value
+            thrust_log.i_shutoff = self.toggle_i_controller
+            thrust_log.d_gain = self.d_gain
+            self.thrust_logger.publish(thrust_log)
 
         # -- update saved Variables --
         self.last_error = error

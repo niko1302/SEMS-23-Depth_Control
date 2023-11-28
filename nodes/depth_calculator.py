@@ -9,6 +9,8 @@ from rclpy.qos import QoSHistoryPolicy, QoSProfile, QoSReliabilityPolicy
 from sensor_msgs.msg import FluidPressure
 from rcl_interfaces.msg import SetParametersResult
 
+from custom_msgs.msg import FilteredPressure
+
 from scipy import constants
 
 
@@ -75,7 +77,7 @@ class DepthCalculator(Node):
         self.depth_pub = self.create_publisher(msg_type=DepthStamped,
                                                topic='depth',
                                                qos_profile=1)
-        self.pressure_filtered_pub = self.create_publisher(msg_type=Float64Stamped,
+        self.pressure_filtered_pub = self.create_publisher(msg_type=FilteredPressure,
                                                        topic='pressure_filtered',
                                                        qos_profile=1)
         self.pressure_sub = self.create_subscription(msg_type=FluidPressure,
@@ -122,9 +124,11 @@ class DepthCalculator(Node):
 
 
     def publish_filtered_pressure (self, pressure_filtered: float, now: rclpy.time.Time) -> None:
-        msg = Float64Stamped()
+        msg = FilteredPressure()
         msg.header.stamp = self.get_clock().now().to_msg()
-        msg.data = pressure_filtered
+        msg.pressure_filtered = pressure_filtered
+        msg.signal_smoothing = self.signal_smoothing
+        msg.moving_average_value = self.moving_average_value
         self.pressure_filtered_pub.publish(msg)
 
 
