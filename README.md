@@ -1,7 +1,6 @@
 # SEMS-23-Depth_Control
 
-## Requirenemnts
-
+## Requirements
 The Custom Messages Package is required:
 ```
 https://github.com/niko1302/SEMS-23-Custom_Messages.git
